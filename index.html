@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="zh">
+<style>
+	body {
+		font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+		background-image: url("https://images.pexels.com/photos/235985/pexels-photo-235985.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1");
+		width:100%;
+		background-size:100%;
+		margin: 0;
+		padding: 40px;
+		color: #333;
+	}
+	div{
+		position: absolute;
+		left:35%;
+		top:5%;
+	}
+</style>
+<head>
+  <meta charset="UTF-8">
+  <title>医疗+分红计算</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+  <div>
+  <h1>上传 Excel 文件</h1>
+  <input type="file" id="excelFile" accept=".xlsx,.xls"><br><br>
+  <button onclick="calculate('insurance')">医疗保险</button>
+  <button onclick="calculate('bonus')">分红</button><br><br>
+
+  <textarea id="result" rows="20" cols="80" readonly></textarea><br><br>
+  <button onclick="copyResult()">复制结果</button>
+  </div>
+  <script>
+    let excelData = [];
+
+    document.getElementById('excelFile').addEventListener('change', function(e) {
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        const data = new Uint8Array(evt.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        excelData = XLSX.utils.sheet_to_json(sheet);
+        alert("✅ 文件读取成功");
+      };
+      reader.readAsArrayBuffer(e.target.files[0]);
+    });
+
+    const bonusMap = {
+      S1: 1000,
+      S2: 10000,
+      S3: 50000,
+      S4: 150000,
+      S5: 500000
+    };
+
+    const insuranceMap = {
+      S3: 13000,
+      S4: 24000,
+      S5: 26000,
+      S6: 28000,
+      S7: 48000,
+      S8: 58000
+    };
+
+    function extract(text, label) {
+      const regex = new RegExp(label + "：(\\d+)");
+      const match = String(text).match(regex);
+      return match ? match[1] : "";
+    }
+
+    function extractAmount(text) {
+      const match = String(text).match(/充值金额：([\d.]+)/);
+      return match ? parseFloat(match[1]) : 0;
+    }
+
+    function levelSortKey(level) {
+      return level.startsWith("S") ? parseInt(level.slice(1)) : 0;
+    }
+
+    function calculate(type) {
+      if (excelData.length === 0) {
+        alert("请先上传 Excel 文件");
+        return;
+      }
+
+      const userData = {};
+
+      for (const row of excelData) {
+        const username = extract(row["会员账号"], "用户名");
+        const leader = extract(row["会员账号"], "我的上级");
+        const level = String(row["会员等级"]).trim();
+        const amount = extractAmount(row["金额"]);
+        const isFirst = String(row["是否首充"]).trim() === "是";
+
+        if (!username) continue;
+        if (!userData[username]) userData[username] = [];
+        userData[username].push({ leader, level, amount, isFirst });
+      }
+
+      const insuranceLines = [];
+      const bonusLines = [];
+
+      for (const username in userData) {
+        const records = userData[username];
+        const first = records.find(r => r.isFirst);
+
+        if (first) {
+          const level = first.level;
+          const leader = first.leader;
+          const ins = insuranceMap[level];
+          const bon = bonusMap[level];
+          if (ins) insuranceLines.push(`${leader}+${ins}`);
+          if (bon) bonusLines.push(`${leader}+${bon}`);
+        } else {
+          const levels = records.map(r => r.level).filter(l => l.startsWith("S"));
+          if (!levels.length) continue;
+          const highest = levels.sort((a, b) => levelSortKey(b) - levelSortKey(a))[0];
+          const ins = insuranceMap[highest];
+          if (ins) insuranceLines.push(`${username}+${ins}`);
+        }
+      }
+
+      const resultArea = document.getElementById("result");
+      resultArea.value = (type === "insurance")
+        ? "" + insuranceLines.join("\n")
+        : "" + bonusLines.join("\n");
+    }
+
+    function copyResult() {
+      const textarea = document.getElementById("result");
+      textarea.select();
+      document.execCommand("copy");
+      alert("✅ 结果已复制！");
+    }
+  </script>
+</body>
+</html>
