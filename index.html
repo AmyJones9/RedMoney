@@ -29,7 +29,7 @@
   <input type="file" id="excelFile" accept=".xlsx,.xls"><br><br>
   <button onclick="calculate('insurance')">医疗保险</button>
   <button onclick="calculate('bonus')">分红</button><br><br>
-
+  <button onclick="maskNumbers()">打码</button><br><br>
   <textarea id="result" rows="20" cols="80" readonly></textarea><br><br>
   <button onclick="copyResult()">复制结果</button>
   </div>
@@ -128,7 +128,20 @@
         ? "" + insuranceLines.join("\n")
         : "" + bonusLines.join("\n");
     }
+      function maskNumbers() {
+        const textarea = document.getElementById("result");
+  	const lines = textarea.value.split("\n").map(line => {
+    	const parts = line.split("+");
+    	if (parts.length !== 2) return line;
 
+    	  const number = parts[0];
+    	if (number.length < 6) return line;
+
+    	  const masked = number.slice(0, 3) + "***" + number.slice(-2);
+    	  return masked + "+" + parts[1];
+    });
+  	  textarea.value = lines.join("\n");
+}
     function copyResult() {
       const textarea = document.getElementById("result");
       textarea.select();
