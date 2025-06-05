@@ -25,7 +25,7 @@
   <div>
   <h1>上传 Excel 文件</h1>
   <h4>文件需要筛选时间+已通过</h4>
-  <h4>医疗保险统计邀请人S3-S5奖励。分红只有邀请人可以得到对应等级的奖金</h4>
+  <h4>医疗保险统计邀请人S1-S5奖励。分红只有邀请人可以得到对应等级的奖金</h4>
   <input type="file" id="excelFile" accept=".xlsx,.xls"><br><br>
   <button onclick="calculate('insurance')">医疗保险</button>
   <button onclick="calculate('bonus')">分红</button><br><br>
@@ -57,6 +57,8 @@
     };
 
     const insuranceMap = {
+      S1: 600,
+      S2: 4200
       S3: 13000,
       S4: 24000,
       S5: 26000,
